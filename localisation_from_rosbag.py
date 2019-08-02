@@ -21,7 +21,7 @@ def callback_method(data):
 
 def myhook():
     print("saving")
-    np.savetxt("house_data.csv", [np.asarray(x_list, dtype=np.float32), np.asarray(y_list, dtype=np.float32),
+    np.savetxt("round_data.csv", [np.asarray(x_list, dtype=np.float32), np.asarray(y_list, dtype=np.float32),
                                   np.asarray(z_list, dtype=np.float32)], delimiter=",")
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
