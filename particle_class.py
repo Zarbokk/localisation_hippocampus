@@ -15,8 +15,10 @@ class ParticleFilter(object):
         self.particles = self.create_uniform_particles(x_range, y_range, z_range)
         self.std_x = 0.05
         self.std_y = 0.05
-        self.std_z = 0.01      # should be smaller than std_x and std_y
-        self.cov_mat_resample = cov_mat   # tuning knob for resampling
+        self.std_z = 0.01  # should be smaller than std_x and std_y
+        self.cov_mat_resample = cov_mat  # tuning knob for resampling
+        # print(self.particles)
+        # exit()
 
     def create_uniform_particles(self, x_range, y_range, z_range):
 
@@ -55,27 +57,19 @@ class ParticleFilter(object):
         """"""
 
         # get number measurements (number of seen tags), dimension of each measurement is 1 -> distance to tag
+        measurements=measurements.reshape((-1,4))
         num_meas = measurements.shape[0]
         distances_measured = measurements[:, 0]
-
         # measurements [ri,xi,yi,zi] i=0 to number of measurements
-        distances_particles = np.zeros((self.NUM_P, num_meas))   # initialize distances
-        # print(distances_particles)
-        #print self.particles
-        # print(self.particles[0, :] * np.ones((num_meas, self.PART_DIM)) - measurements[:, 1:4])
-        # print(measurements[:, 1:4])
-        # print(np.linalg.norm(self.particles[0, :] * np.ones((num_meas,self.PART_DIM)) - measurements[:, 1:4],axis=1))
+        distances_particles = np.zeros((self.NUM_P, num_meas))  # initialize distances
         for i in range(self.NUM_P):
             distances_particles[i, :] = np.linalg.norm(self.particles[i, :] * np.ones((num_meas, self.PART_DIM)) -
                                                        measurements[:, 1:4], axis=1)
-            #print "pre " + str(self.particles[i, :] * np.ones((num_meas, self.PART_DIM)))
-            #print "aft " + str(measurements[:, 1:4])
-            #print "nump: " + str(distances_particles[i, :])
-
-        #print "geschaetzte messungen: " + str(distances_particles)
+        # print()
+        # print "geschaetzte messungen: " + str(distances_particles)
 
         # covariance matrix (diagonal)
-        m = np.zeros((num_meas, num_meas))   # if dimension of each measurement is > 1: num_meas*dim_meas
+        m = np.zeros((num_meas, num_meas))  # if dimension of each measurement is > 1: num_meas*dim_meas
         for ind in range(num_meas):
             m[ind][ind] = self.cov_mat_resample * self.cov_mat_resample
         cov_matrix = m
@@ -113,13 +107,3 @@ class ParticleFilter(object):
                 index = (index + 1) % self.NUM_P
 
             self.particles[i, :] = self.particles[index, :]
-
-        # print weights
-
-
-
-
-
-    #
-    # def neff(self, weights):
-    #     return 1. / np.sum(np.square(weights))
