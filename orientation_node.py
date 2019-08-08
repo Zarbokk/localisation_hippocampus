@@ -22,6 +22,14 @@ tags = np.array(([[14, 0, 0, 0],
                   [15, 0.7, 0, 0],
                   [16, 0, 0.6, 0],
                   [17, 0.9, 0.6, 0]]))
+qx_180 = Quaternion(axis=[1, 0, 0], angle=np.pi)
+qz_90n = Quaternion(axis=[0, 0, 1], angle=-np.pi / 2)
+
+dreh=qx_180*qz_90n
+
+for i in range(tags.shape[0]):
+    pass
+
 
 rviz = True
 
@@ -40,11 +48,12 @@ def callback(msg, list):
             tag_id = int(tag.id[0])
             distance = Quaternion(w=tag.pose.pose.pose.orientation.w, x=tag.pose.pose.pose.orientation.x,
                                   y=tag.pose.pose.pose.orientation.y, z=tag.pose.pose.pose.orientation.z)
+            distance=distance
             # distance = Quaternion.random()
-            yaw_array[i] = np.asarray(distance.yaw_pitch_roll)[2]
+            print(np.asarray(distance.yaw_pitch_roll)*180/np.pi)
             # print(euler_from_quaternion([distance.x,distance.y]))
             # print(index)
-        print(np.mean(yaw_array)*180/np.pi)
+        #print(yaw_array*180/np.pi)
         # print "reale messungen: " + str(measurements)
 
     # calculate position as mean of particle positions
@@ -66,8 +75,6 @@ def callback(msg, list):
                               "TestPose",
                               "world")
     """
-
-
 def main():
     rospy.init_node('particle_filter_node')
     # particle_filter = particle_class.ParticleFilter(NUM_P, PART_DIM, x_range, y_range, z_range, cov_mat)

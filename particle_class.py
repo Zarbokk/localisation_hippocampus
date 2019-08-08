@@ -13,9 +13,10 @@ class ParticleFilter(object):
         self.NUM_P = NUM_P
         self.PART_DIM = PART_DIM
         self.particles = self.create_uniform_particles(x_range, y_range, z_range)
-        self.std_x = 0.05
-        self.std_y = 0.05
-        self.std_z = 0.01  # should be smaller than std_x and std_y
+        p=1
+        self.std_x = 0.05*p
+        self.std_y = 0.05*p
+        self.std_z = 0.01*p  # should be smaller than std_x and std_y
         self.cov_mat_resample = cov_mat  # tuning knob for resampling
         # print(self.particles)
         # exit()
