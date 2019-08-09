@@ -153,9 +153,9 @@ def callback(msg, tmp_list):
     position = PoseStamped()
     position.header.stamp = rospy.Time.now()
     position.header.frame_id = "global_tank"
-    position.pose.position.x = x_mean
-    position.pose.position.y = y_mean
-    position.pose.position.z = z_mean
+    position.pose.position.x = x_mean/1000
+    position.pose.position.y = y_mean/1000
+    position.pose.position.z = z_mean/1000
     publisher_position.publish(position)
 
     # publish estimated_pose in mavros to /mavros/vision_pose/pose
@@ -163,9 +163,9 @@ def callback(msg, tmp_list):
     mavros_position = PoseStamped()
     mavros_position.header.stamp = rospy.Time.now()
     mavros_position.header.frame_id = "map"
-    mavros_position.pose.position.x = y_mean/1000
-    mavros_position.pose.position.y = x_mean/1000
-    mavros_position.pose.position.z = - z_mean/1000
+    mavros_position.pose.position.x = y_mean
+    mavros_position.pose.position.y = x_mean
+    mavros_position.pose.position.z = - z_mean
 
     mavros_position.pose.orientation.w = estimated_orientation[0]
     mavros_position.pose.orientation.x = estimated_orientation[1]
