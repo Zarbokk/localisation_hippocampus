@@ -12,7 +12,6 @@ from apriltag_ros.msg import AprilTagDetection
 from visualization_msgs.msg import Marker, MarkerArray
 from numpy import genfromtxt
 
-
 NUM_P = 100
 PART_DIM = 3  # x, y, z
 x_range = (0, 3)
@@ -70,7 +69,7 @@ cov_mat = 0.05
 #  [19.     ,    -0.06760727,  1.35470647,  1.33599061]]))
 tags = genfromtxt('calibration.csv', delimiter=',')
 tags = tags[:, 0:4]
-tags[:,1] += 0.3
+tags[:, 1] += 0.3
 # print(tags)
 rviz = False
 
@@ -88,7 +87,7 @@ def yaw_pitch_roll_to_quat(yaw, pitch, roll):
 
 def callback(msg, tmp_list):
     """"""
-    [particle_filter, publisher_position, publisher_particles, broadcaster, publisher_marker] = tmp_list
+    [particle_filter, publisher_position, publisher_mavros, publisher_particles, broadcaster, publisher_marker] = tmp_list
 
     # particle filter algorithm
     particle_filter.predict()  # move particles
@@ -110,7 +109,7 @@ def callback(msg, tmp_list):
             tmpquat = Quaternion(w=tag.pose.pose.pose.orientation.w, x=tag.pose.pose.pose.orientation.x,
                                  y=tag.pose.pose.pose.orientation.y, z=tag.pose.pose.pose.orientation.z)
 
-            orientation_yaw_pitch_roll[i, :] = tmpquat.yaw_pitch_roll
+            orientation_yaw_pitch_roll[i, :] = tmpquat.inverse.yaw_pitch_roll
             index = np.where(tags[:, 0] == tag_id)
 
             measurements[i, 1:4] = tags[index, 1:4]
@@ -137,18 +136,43 @@ def callback(msg, tmp_list):
         particle_filter.update(measurements)
 
         # print "reale messungen: " + str(measurements)
+    yaw = np.mean(orientation_yaw_pitch_roll[:,0])
+    pitch = np.mean(orientation_yaw_pitch_roll[:, 1])
+    roll = np.mean(orientation_yaw_pitch_roll[:, 2])
+    print(yaw*180/np.pi      )
+    estimated_orientation = yaw_pitch_roll_to_quat(yaw, 0, 0)
 
     # calculate position as mean of particle positions
     estimated_position = particle_filter.estimate()
+
+    x_mean = estimated_position[0] * 1000
+    y_mean = estimated_position[1] * 1000
+    z_mean = estimated_position[2] * 1000
 
     # publish estimated_pose
     position = PoseStamped()
     position.header.stamp = rospy.Time.now()
     position.header.frame_id = "global_tank"
-    position.pose.position.x = estimated_position[0] * 1000
-    position.pose.position.y = estimated_position[1] * 1000
-    position.pose.position.z = estimated_position[2] * 1000
+    position.pose.position.x = x_mean
+    position.pose.position.y = y_mean
+    position.pose.position.z = z_mean
     publisher_position.publish(position)
+
+    # publish estimated_pose in mavros to /mavros/vision_pose/pose
+    # this pose needs to be in ENU
+    mavros_position = PoseStamped()
+    mavros_position.header.stamp = rospy.Time.now()
+    mavros_position.header.frame_id = "map"
+    mavros_position.pose.position.x = y_mean/1000
+    mavros_position.pose.position.y = x_mean/1000
+    mavros_position.pose.position.z = - z_mean/1000
+
+    mavros_position.pose.orientation.w = estimated_orientation[0]
+    mavros_position.pose.orientation.x = estimated_orientation[1]
+    mavros_position.pose.orientation.y = estimated_orientation[2]
+    mavros_position.pose.orientation.z = estimated_orientation[3]
+
+    publisher_mavros.publish(mavros_position)
 
     """
     # publish transform
@@ -189,12 +213,13 @@ def main():
     rospy.init_node('particle_filter_node')
     particle_filter = particle_class.ParticleFilter(NUM_P, PART_DIM, x_range, y_range, z_range, cov_mat)
     publisher_position = rospy.Publisher('estimated_pose', PoseStamped, queue_size=1)
+    publisher_mavros = rospy.Publisher('/mavros/vision_pose/pose', PoseStamped, queue_size=1)
     publisher_particles = rospy.Publisher('particle_poses', PoseArray, queue_size=1)
     publisher_marker = rospy.Publisher('Sphere', MarkerArray, queue_size=1)
     broadcaster = tf.TransformBroadcaster()
     rospy.Subscriber("/tag_detections", AprilTagDetectionArray, callback,
-                     [particle_filter, publisher_position, publisher_particles, broadcaster, publisher_marker],
-                     queue_size=1)
+                     [particle_filter, publisher_position, publisher_mavros, publisher_particles, broadcaster,
+                      publisher_marker], queue_size=1)
 
     while not rospy.is_shutdown():
         pass
